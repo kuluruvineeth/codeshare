@@ -1,0 +1,109 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account{
+  id String @id @default(cuid())
+  type String 
+  provider String
+  providerAccountId String
+  refresh_token String? @db.Text
+  access_token String? @db.Text
+  expires_at Int?
+  token_type String?
+  scope String?
+  id_token String? @db.Text
+  session_state String?
+  refresh_token_expires_in Int?
+
+  userId String
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  @@unique([provider,providerAccountId])
+  @@index([userId])
+  @@map(name: "accounts")
+}
+
+model Session{
+  id String @id @default(cuid())
+  sessionToken String @unique
+  expires DateTime
+
+  userId String
+  user User @relation(fields: [userId],references: [id],onDelete: Cascade)
+
+  @@index([userId])
+  @@map(name: "sessions")
+}
+
+model User{
+  id String @id @default(cuid())
+  name String?
+  email String? @unique
+  emailVerified DateTime?
+  image String?
+  createdAt DateTime @default(now()) @map(name: "created_at")
+
+
+  snippets Snippet[]
+  accounts Account[]
+  sessions Session[]
+
+  @@map(name: "users")
+}
+
+model VerificationToken{
+  identifier String
+  token String @unique
+  expires DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Snippet{
+  id String @id @default(cuid())
+
+  title String? @db.VarChar(70)
+  code String? @db.Text
+
+  language String @default("typescript")
+  theme String @default("bubblegum")
+  fontFamily String @default("fira_code")
+  fontSize String @default("14")
+  lineNumbers Boolean @default(true)
+  padding String @default("32")
+
+  customColors Json? @default("{}")
+  colorMode String @default("rgb")
+  angle Int @default(145)
+  grain Boolean @default(false)
+
+  createdAt DateTime @default(now()) @map(name: "created_at")
+  updatedAt DateTime @default(now()) @map(name:"updated_at")
+
+  userId String
+  user User @relation(fields: [userId],references: [id])
+
+  views View?
+
+  @@index([userId])
+  @@map(name:"snippets")
+}
+
+model View{
+  count Int @default(0)
+
+  snippet Snippet @relation(fields: [snippetId],references: [id],onDelete: Cascade)
+  snippetId String @unique
+
+  @@map(name:"views")
+}
